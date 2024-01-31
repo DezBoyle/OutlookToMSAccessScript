@@ -1,5 +1,8 @@
-﻿namespace OutlookToMSAccessScript
+﻿using System.Runtime.Versioning;
+
+namespace OutlookToMSAccessScript
 {
+    [SupportedOSPlatform("windows")]
     internal class Program
     {
         static void Main(string[] args)
@@ -36,7 +39,22 @@
                     new KeyValuePair<string, string>("COState", state),
                     new KeyValuePair<string, string>("COZip", zip),
                 };
+
                 accessDatabaseTool.UpdateRow("CompanyName", "CompanyName", companyName, properties);
+
+                Console.WriteLine($"(TEST) Enter Company {companyName} First Name:");
+                string firstName = Console.ReadLine();
+                Console.WriteLine($"(TEST) Enter Company {companyName} Last Name:");
+                string lastName = Console.ReadLine();
+                Console.WriteLine($"(TEST) Enter Company {companyName} Email:");
+                string email = Console.ReadLine();
+                Console.WriteLine($"(TEST) Enter Company {companyName} Phone:");
+                string phone = Console.ReadLine();
+
+                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", companyName).Rows[0].ToString(); //grab the company id (may have multiple, just take the first one)
+
+                bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompany", companyId);
+                //same thing as before, make new if need to, then update it with info
             }
            
         }

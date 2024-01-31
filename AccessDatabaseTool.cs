@@ -6,28 +6,17 @@ using System.Threading.Tasks;
 using System.Data.OleDb;
 using System.Data;
 using System.Net;
+using System.Runtime.Versioning;
 
 namespace OutlookToMSAccessScript
 {
+    [SupportedOSPlatform("windows")]
     internal class AccessDatabaseTool
     {
-        private string fileNameWithPath;
-        public AccessDatabaseTool(string fileNameWithPath)
+        private string mdbFileNameWithPath; //the full path and extension to the .mdb access database file EX: C:/database.mdb
+        public AccessDatabaseTool(string mdbFileNameWithPath)
         {
-            this.fileNameWithPath = fileNameWithPath;
-        }
-        public void Test()
-        {
-            var myDataTable = new DataTable();
-            using (var conection = new OleDbConnection("Provider = Microsoft.JET.OLEDB.4.0;  Data Source = " + fileNameWithPath))
-            {
-                conection.Open();
-                var query = "Select CompanyName From CompanyName";
-                var adapter = new OleDbDataAdapter(query, conection);
-                adapter.Fill(myDataTable);
-                Console.WriteLine(myDataTable.Rows[0][0].ToString());
-                Console.ReadKey();
-            }
+            this.mdbFileNameWithPath = mdbFileNameWithPath;
         }
 
         /// <summary>
@@ -39,14 +28,19 @@ namespace OutlookToMSAccessScript
         /// <returns></returns>
         public bool RowExists(string tableName, string columnName, string value)
         {
+            return GetRows(tableName, columnName, value).Rows.Count != 0;
+        }
+
+        public DataTable GetRows(string tableName, string columnName, string value)
+        {
             var myDataTable = new DataTable();
-            using (var conection = new OleDbConnection("Provider = Microsoft.JET.OLEDB.4.0;  Data Source = " + fileNameWithPath))
+            using (var conection = new OleDbConnection("Provider = Microsoft.JET.OLEDB.4.0;  Data Source = " + mdbFileNameWithPath))
             {
                 conection.Open();
                 var query = $"Select * From {tableName} Where {columnName} = '{value}'";
                 var adapter = new OleDbDataAdapter(query, conection);
                 adapter.Fill(myDataTable);
-                return myDataTable.Rows.Count != 0;
+                return myDataTable;
             }
         }
 
@@ -58,7 +52,7 @@ namespace OutlookToMSAccessScript
         /// <param name="initialColumnValue">The initial value to insert</param>
         public void AddRow(string tableName, string initialColumn, string initialColumnValue)
         {
-            var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + fileNameWithPath);
+            var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + mdbFileNameWithPath);
             var cmd = new OleDbCommand();
             cmd.Connection = con;
             cmd.CommandText = $"insert into {tableName} ({initialColumn})  values ('{initialColumnValue}');";
@@ -67,9 +61,16 @@ namespace OutlookToMSAccessScript
             con.Close();
         }
 
+        /// <summary>
+        /// Updates a row with a given column and row value
+        /// </summary>
+        /// <param name="table">Name of the Table</param>
+        /// <param name="column">Column to update</param>
+        /// <param name="row">Row to update</param>
+        /// <param name="properties">An array of KeyValuePairs where the .Key represents the column name and the .Row represents the value.  FOR EXAMPLE: .Key=Name, .Value=Bob</param>
         public void UpdateRow(string table, string column, string row, KeyValuePair<string, string>[] properties)
         {
-            var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + fileNameWithPath);
+            var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + mdbFileNameWithPath);
             var cmd = new OleDbCommand();
             cmd.Connection = con;
 
