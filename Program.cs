@@ -1,4 +1,5 @@
-﻿using System.Runtime.Versioning;
+﻿using Microsoft.Office.Interop.Outlook;
+using System.Runtime.Versioning;
 
 namespace OutlookToMSAccessScript
 {
@@ -7,6 +8,9 @@ namespace OutlookToMSAccessScript
     {
         static void Main(string[] args)
         {
+            Print("  __  __ _                           __ _        _                            \r\n |  \\/  (_) ___ _ __ ___  ___  ___  / _| |_     / \\   ___ ___ ___  ___ ___    \r\n | |\\/| | |/ __| '__/ _ \\/ __|/ _ \\| |_| __|   / _ \\ / __/ __/ _ \\/ __/ __|   \r\n | |  | | | (__| | | (_) \\__ \\ (_) |  _| |_   / ___ \\ (_| (_|  __/\\__ \\__ \\   \r\n |_|  |_|_|\\___|_|  \\___/|___/\\___/|_|  \\__| /_/   \\_\\___\\___\\___||___/___/   \r\n     _         _                        _   _               _____           _ \r\n    / \\  _   _| |_ ___  _ __ ___   __ _| |_(_) ___  _ __   |_   _|__   ___ | |\r\n   / _ \\| | | | __/ _ \\| '_ ` _ \\ / _` | __| |/ _ \\| '_ \\    | |/ _ \\ / _ \\| |\r\n  / ___ \\ |_| | || (_) | | | | | | (_| | |_| | (_) | | | |   | | (_) | (_) | |\r\n /_/   \\_\\__,_|\\__\\___/|_| |_| |_|\\__,_|\\__|_|\\___/|_| |_|   |_|\\___/ \\___/|_|\r\n                                                                              ");
+            Print("A handy dandy program created by Dez Boyle", ConsoleColor.White);
+
             string saveFilePath = "databasePath.txt";
             string databasePath = "C:/Users/dboyle/testdb.mdb";
 
@@ -14,13 +18,41 @@ namespace OutlookToMSAccessScript
             { databasePath = File.ReadAllText(saveFilePath); }
             else
             {
-                Console.WriteLine("Enter the path of the database file (.mdb)");
+                Print("Enter the path of the database file (.mdb)", ConsoleColor.Yellow);
                 File.WriteAllText(saveFilePath, Console.ReadLine());
             }
 
             File.WriteAllText("information.txt", "Created by Dez Boyle\nSource Code: https://github.com/DezBoyle/OutlookToMSAccessScript");
 
             DebugPrompt(databasePath);
+
+            OutlookEmailTool outlookEmailTool = new OutlookEmailTool();
+
+            Print("Select the folder that contains the emails to import into Access", ConsoleColor.Green);
+
+            Items emails = outlookEmailTool.GetEmails();
+
+            List<MailItem> mailItems = new List<MailItem>();
+            for (int i = 1; i < emails.Count + 1; i++)
+            {
+                if (emails[i] as MailItem != null)
+                { mailItems.Add(emails[i]); }
+            }
+
+            for (int i = 0; i < mailItems.Count; i++)
+            {
+                MailItem mailItem = mailItems[i];
+                Print(mailItem.Subject, i % 2 == 0 ? ConsoleColor.White : ConsoleColor.Gray);
+            }
+
+            //DebugPrompt(databasePath);
+        }
+
+        private static void Print(string text, ConsoleColor color = ConsoleColor.White)
+        {
+            Console.ForegroundColor = color;    
+            Console.WriteLine(text);
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
         private static void DebugPrompt(string databasePath)
@@ -32,7 +64,7 @@ namespace OutlookToMSAccessScript
                 Console.WriteLine("(TEST) Enter Company Name:");
                 string companyName = Console.ReadLine();
 
-                bool companyExists = accessDatabaseTool.RowExists("CompanyName", "CompanyName", companyName);
+                bool companyExists = accessDatabaseTool.RowExists("CompanyName", "CompanyName", $"'{companyName}'");
                 Console.WriteLine("Company Exists: " + companyExists);
                 if (!companyExists)
                 {
@@ -69,9 +101,9 @@ namespace OutlookToMSAccessScript
                 Console.WriteLine($"(TEST) Enter Company {companyName} Phone (FORMAT: 8154425564):");
                 string phone = Console.ReadLine();
 
-                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", companyName).Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
+                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", $"'{companyName}'").Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
 
-                bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompany", companyId);
+                bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompanyID", $"CInt({companyId})");
                 if (!contactExists)
                 {
                     Console.WriteLine("new contact- Added contact to table");

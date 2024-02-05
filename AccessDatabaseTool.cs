@@ -40,7 +40,7 @@ namespace OutlookToMSAccessScript
             using (var conection = new OleDbConnection("Provider = Microsoft.JET.OLEDB.4.0;  Data Source = " + mdbFileNameWithPath))
             {
                 conection.Open();
-                var query = $"Select * From {tableName} Where {columnName} = '{value}'";
+                var query = $"Select * From [{tableName}] Where {columnName} = {value}";
                 var adapter = new OleDbDataAdapter(query, conection);
                 try { adapter.Fill(myDataTable); }
                 catch (Exception ex) { return null; }
