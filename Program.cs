@@ -24,7 +24,7 @@ namespace OutlookToMSAccessScript
 
             File.WriteAllText("information.txt", "Created by Dez Boyle\nSource Code: https://github.com/DezBoyle/OutlookToMSAccessScript");
 
-            DebugPrompt(databasePath);
+            //DebugPrompt(databasePath);
 
             OutlookEmailTool outlookEmailTool = new OutlookEmailTool();
 
@@ -61,9 +61,8 @@ namespace OutlookToMSAccessScript
                 }
             }
 
-            
+            //parse email stuff here
 
-            //DebugPrompt(databasePath);
         }
 
         private static void Print(string text, ConsoleColor color = ConsoleColor.White)
