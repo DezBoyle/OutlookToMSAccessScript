@@ -28,8 +28,11 @@ namespace OutlookToMSAccessScript
         /// <returns></returns>
         public bool RowExists(string tableName, string columnName, string value)
         {
-            return GetRows(tableName, columnName, value).Rows.Count != 0;
+            DataTable output = GetRows(tableName, columnName, value);
+            if(output == null) { return false; }
+            return output.Rows.Count != 0;
         }
+
 
         public DataTable GetRows(string tableName, string columnName, string value)
         {
@@ -39,7 +42,8 @@ namespace OutlookToMSAccessScript
                 conection.Open();
                 var query = $"Select * From {tableName} Where {columnName} = '{value}'";
                 var adapter = new OleDbDataAdapter(query, conection);
-                adapter.Fill(myDataTable);
+                try { adapter.Fill(myDataTable); }
+                catch (Exception ex) { return null; }
                 return myDataTable;
             }
         }
@@ -55,7 +59,7 @@ namespace OutlookToMSAccessScript
             var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + mdbFileNameWithPath);
             var cmd = new OleDbCommand();
             cmd.Connection = con;
-            cmd.CommandText = $"insert into {tableName} ({initialColumn})  values ('{initialColumnValue}');";
+            cmd.CommandText = $"insert into [{tableName}] ([{initialColumn}])  values ('{initialColumnValue}');";
             con.Open();
             cmd.ExecuteNonQuery();
             con.Close();
@@ -84,7 +88,7 @@ namespace OutlookToMSAccessScript
                 { propertiesQuery += ", "; } //add a comma if there are more properties after this
             }
 
-            cmd.CommandText = $"UPDATE CompanyName SET {propertiesQuery} WHERE {column} = '{row}';";
+            cmd.CommandText = $"UPDATE [{table}] SET {propertiesQuery} WHERE {column} = {row};";
             con.Open();
             cmd.ExecuteNonQuery();
             con.Close();

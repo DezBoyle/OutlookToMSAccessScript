@@ -7,7 +7,18 @@ namespace OutlookToMSAccessScript
     {
         static void Main(string[] args)
         {
-            AccessDatabaseTool accessDatabaseTool = new AccessDatabaseTool("C:/Users/dboyle/testdb.mdb");
+            string saveFilePath = "databasePath.txt";
+            string databasePath = "C:/Users/dboyle/testdb.mdb";
+
+            if(File.Exists(saveFilePath))
+            { databasePath = File.ReadAllText(saveFilePath); }
+            else
+            {
+                Console.WriteLine("Enter the path of the database file (.mdb)");
+                File.WriteAllText(saveFilePath, Console.ReadLine());
+            }
+
+            AccessDatabaseTool accessDatabaseTool = new AccessDatabaseTool(databasePath);
 
             while(true)
             {
@@ -32,7 +43,7 @@ namespace OutlookToMSAccessScript
                 Console.WriteLine($"(TEST) Enter Company {companyName} Zip:");
                 string zip = Console.ReadLine();
 
-                KeyValuePair<string, string>[] properties = new KeyValuePair<string, string>[]
+                KeyValuePair<string, string>[] companyProperties = new KeyValuePair<string, string>[]
                 {
                     new KeyValuePair<string, string>("COAddress", address),
                     new KeyValuePair<string, string>("COCity", city),
@@ -40,7 +51,7 @@ namespace OutlookToMSAccessScript
                     new KeyValuePair<string, string>("COZip", zip),
                 };
 
-                accessDatabaseTool.UpdateRow("CompanyName", "CompanyName", companyName, properties);
+                accessDatabaseTool.UpdateRow("CompanyName", "CompanyName", $"'{companyName}'", companyProperties);
 
                 Console.WriteLine($"(TEST) Enter Company {companyName} First Name:");
                 string firstName = Console.ReadLine();
@@ -48,13 +59,27 @@ namespace OutlookToMSAccessScript
                 string lastName = Console.ReadLine();
                 Console.WriteLine($"(TEST) Enter Company {companyName} Email:");
                 string email = Console.ReadLine();
-                Console.WriteLine($"(TEST) Enter Company {companyName} Phone:");
+                Console.WriteLine($"(TEST) Enter Company {companyName} Phone (FORMAT: 8154425564):");
                 string phone = Console.ReadLine();
 
-                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", companyName).Rows[0].ToString(); //grab the company id (may have multiple, just take the first one)
+                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", companyName).Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
 
                 bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompany", companyId);
-                //same thing as before, make new if need to, then update it with info
+                if(!contactExists)
+                {
+                    Console.WriteLine("new contact- Added contact to table");
+                    accessDatabaseTool.AddRow("Contact information", "COCompanyID", companyId);
+                }
+
+                KeyValuePair<string, string>[] contactProperties = new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("ContactFName", firstName),
+                    new KeyValuePair<string, string>("ContactLName", lastName),
+                    new KeyValuePair<string, string>("ContactEmail", email),
+                    new KeyValuePair<string, string>("ContractPhone", phone), //they spelled Contact wrong in the database lol
+                };
+
+                accessDatabaseTool.UpdateRow("Contact information", "COCompanyID", $"CInt({companyId})", contactProperties);
             }
            
         }
