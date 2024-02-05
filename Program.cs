@@ -42,8 +42,26 @@ namespace OutlookToMSAccessScript
             for (int i = 0; i < mailItems.Count; i++)
             {
                 MailItem mailItem = mailItems[i];
-                Print(mailItem.Subject, i % 2 == 0 ? ConsoleColor.White : ConsoleColor.Gray);
+                Print("    > " + mailItem.Subject, i % 2 == 0 ? ConsoleColor.White : ConsoleColor.Gray);
             }
+
+            Print("\nThe above^ emails will be entered into Access.", ConsoleColor.Green);
+            
+            while(true)
+            {
+                Print("Continue? (y/n)", ConsoleColor.Green);
+                char key = Console.ReadKey().KeyChar;
+                if (key == 'y')
+                { break; }
+                else if(key == 'n')
+                {
+                    Print("Cancelled.  Press any key to quit", ConsoleColor.Red);
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+            }
+
+            
 
             //DebugPrompt(databasePath);
         }
