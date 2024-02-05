@@ -18,16 +18,23 @@ namespace OutlookToMSAccessScript
                 File.WriteAllText(saveFilePath, Console.ReadLine());
             }
 
+            File.WriteAllText("information.txt", "Created by Dez Boyle\nSource Code: https://github.com/DezBoyle/OutlookToMSAccessScript");
+
+            DebugPrompt(databasePath);
+        }
+
+        private static void DebugPrompt(string databasePath)
+        {
             AccessDatabaseTool accessDatabaseTool = new AccessDatabaseTool(databasePath);
 
-            while(true)
+            while (true)
             {
                 Console.WriteLine("(TEST) Enter Company Name:");
                 string companyName = Console.ReadLine();
 
                 bool companyExists = accessDatabaseTool.RowExists("CompanyName", "CompanyName", companyName);
                 Console.WriteLine("Company Exists: " + companyExists);
-                if(!companyExists)
+                if (!companyExists)
                 {
                     Console.WriteLine("new company- Added company to table");
                     accessDatabaseTool.AddRow("CompanyName", "CompanyName", companyName);
@@ -65,7 +72,7 @@ namespace OutlookToMSAccessScript
                 string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", companyName).Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
 
                 bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompany", companyId);
-                if(!contactExists)
+                if (!contactExists)
                 {
                     Console.WriteLine("new contact- Added contact to table");
                     accessDatabaseTool.AddRow("Contact information", "COCompanyID", companyId);
@@ -81,7 +88,6 @@ namespace OutlookToMSAccessScript
 
                 accessDatabaseTool.UpdateRow("Contact information", "COCompanyID", $"CInt({companyId})", contactProperties);
             }
-           
         }
     }
 }
