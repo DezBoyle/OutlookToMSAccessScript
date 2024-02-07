@@ -1,5 +1,7 @@
 ﻿using Microsoft.Office.Interop.Outlook;
+using System.Drawing;
 using System.Runtime.Versioning;
+using System.Xml.Linq;
 
 namespace OutlookToMSAccessScript
 {
@@ -9,7 +11,8 @@ namespace OutlookToMSAccessScript
         static void Main(string[] args)
         {
             Print("  __  __ _                           __ _        _                            \r\n |  \\/  (_) ___ _ __ ___  ___  ___  / _| |_     / \\   ___ ___ ___  ___ ___    \r\n | |\\/| | |/ __| '__/ _ \\/ __|/ _ \\| |_| __|   / _ \\ / __/ __/ _ \\/ __/ __|   \r\n | |  | | | (__| | | (_) \\__ \\ (_) |  _| |_   / ___ \\ (_| (_|  __/\\__ \\__ \\   \r\n |_|  |_|_|\\___|_|  \\___/|___/\\___/|_|  \\__| /_/   \\_\\___\\___\\___||___/___/   \r\n     _         _                        _   _               _____           _ \r\n    / \\  _   _| |_ ___  _ __ ___   __ _| |_(_) ___  _ __   |_   _|__   ___ | |\r\n   / _ \\| | | | __/ _ \\| '_ ` _ \\ / _` | __| |/ _ \\| '_ \\    | |/ _ \\ / _ \\| |\r\n  / ___ \\ |_| | || (_) | | | | | | (_| | |_| | (_) | | | |   | | (_) | (_) | |\r\n /_/   \\_\\__,_|\\__\\___/|_| |_| |_|\\__,_|\\__|_|\\___/|_| |_|   |_|\\___/ \\___/|_|\r\n                                                                              ");
-            Print("A handy dandy program created by Dez Boyle", ConsoleColor.White);
+            Print("A handy dandy program created by Dez Boyle");
+            PrintRainbow("------------------------------------------\n");
 
             string saveFilePath = "databasePath.txt";
             string databasePath = "C:/Users/dboyle/testdb.mdb";
@@ -28,7 +31,7 @@ namespace OutlookToMSAccessScript
 
             OutlookEmailTool outlookEmailTool = new OutlookEmailTool();
 
-            Print("Select the folder that contains the emails to import into Access", ConsoleColor.Green);
+            Print("Select the folder in Outlook that contains the emails to import into Access\n    (you might have to click Outlook to see the prompt)", ConsoleColor.Green);
 
             Items emails = outlookEmailTool.GetEmails();
 
@@ -55,14 +58,95 @@ namespace OutlookToMSAccessScript
                 { break; }
                 else if(key == 'n')
                 {
-                    Print("Cancelled.  Press any key to quit", ConsoleColor.Red);
+                    Print("\nCancelled.  Press any key to quit", ConsoleColor.Red);
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
             }
 
-            //parse email stuff here
+            Console.WriteLine("");
+            AccessDatabaseTool accessDatabaseTool = new AccessDatabaseTool(databasePath);
 
+            //parse email stuff here
+            foreach (MailItem mailItem in mailItems)
+            {
+                string fullName = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Name: ", "Email: "));
+                string firstName = fullName.Split(' ')[0];
+                string lastName = fullName.Split(firstName)[1].Replace(" ", string.Empty);
+                string email = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Email: ", "<"));
+                string companyName = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Company: ", "U.S. phone number: "));
+                string phoneNumber = GetNumbersFromString(RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "U.S. phone number: ", "Address: ")));
+                string address = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Address: ", "City: "));
+                string city = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "City: ", "State: "));
+                string state = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "State: ", "U.S. ZIP code: "));
+                string zip = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "U.S. ZIP code: ", "reCAPTCHA:"));
+
+                Print($"    [firstName: {firstName}]   [lastName: {lastName}]   [email: {email}]   [companyName: {companyName}]   [phoneNumber: {phoneNumber}]   [address: {address}]   [city: {city}]   [state: {state}]   [zip: {zip}]");
+
+
+                bool companyExists = accessDatabaseTool.RowExists("CompanyName", "CompanyName", $"'{companyName}'");
+                Console.WriteLine("Company Exists: " + companyExists);
+                if (!companyExists)
+                {
+                    Console.WriteLine("new company- Added company to table");
+                    accessDatabaseTool.AddRow("CompanyName", "CompanyName", companyName);
+                }
+
+                KeyValuePair<string, string>[] companyProperties = new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("COAddress", address),
+                    new KeyValuePair<string, string>("COCity", city),
+                    new KeyValuePair<string, string>("COState", state),
+                    new KeyValuePair<string, string>("COZip", zip),
+                };
+
+                accessDatabaseTool.UpdateRow("CompanyName", "CompanyName", $"'{companyName}'", companyProperties);
+
+                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", $"'{companyName}'").Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
+
+                bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompanyID", $"CInt({companyId})");
+                if (!contactExists)
+                {
+                    Console.WriteLine("new contact- Added contact to table");
+                    accessDatabaseTool.AddRow("Contact information", "COCompanyID", companyId);
+                }
+
+                KeyValuePair<string, string>[] contactProperties = new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("ContactFName", firstName),
+                    new KeyValuePair<string, string>("ContactLName", lastName),
+                    new KeyValuePair<string, string>("ContactEmail", email),
+                    new KeyValuePair<string, string>("ContractPhone", phoneNumber), //they spelled Contact wrong in the database lol
+                };
+
+                accessDatabaseTool.UpdateRow("Contact information", "COCompanyID", $"CInt({companyId})", contactProperties);
+            }
+
+            Print("");
+            Print("Finished updating database!  Press any key to close\n", ConsoleColor.Green);
+            Print(" /\\_/\\ ♥\r\n >^,^<\r\n  / \\\r\n (___)_/");
+            Console.ReadKey();
+            Environment.Exit(0);
+        }
+        private static string GetNumbersFromString(string input)
+        {
+            return new string(input.Where(c => char.IsDigit(c)).ToArray());
+        }
+
+        private static string GetTextBetween(string source, string start, string end)
+        {
+            int pFrom = source.IndexOf(start) + start.Length;
+            int pTo = source.LastIndexOf(end);
+
+            return source.Substring(pFrom, pTo - pFrom);
+        }
+
+        private static string RemoveTrailingSpacesAndNewLines(string text)
+        {
+            text = text.Trim(' ');
+            text = text.Replace("\n", string.Empty);
+            text = text.Replace("\r", string.Empty);
+            return text;
         }
 
         private static void Print(string text, ConsoleColor color = ConsoleColor.White)
@@ -70,6 +154,27 @@ namespace OutlookToMSAccessScript
             Console.ForegroundColor = color;    
             Console.WriteLine(text);
             Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        private static void PrintRainbow(string text)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                ConsoleColor color = ConsoleColor.White;
+                switch (i % 6)
+                {
+                    case 0: color = ConsoleColor.Red; break;
+                    case 1: color = ConsoleColor.White; break;
+                    case 2: color = ConsoleColor.Green; break;
+                    case 3: color = ConsoleColor.Cyan; break;
+                    case 4: color = ConsoleColor.Blue; break;
+                    case 5: color = ConsoleColor.Magenta; break;
+                }
+                Console.ForegroundColor = color;
+                Console.Write(text[i]);
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            Console.WriteLine();
         }
 
         private static void DebugPrompt(string databasePath)
