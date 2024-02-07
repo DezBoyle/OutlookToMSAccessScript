@@ -31,7 +31,7 @@ namespace OutlookToMSAccessScript
 
             OutlookEmailTool outlookEmailTool = new OutlookEmailTool();
 
-            Print("Select the folder in Outlook that contains the emails to import into Access\n    (you might have to click Outlook to see the prompt)", ConsoleColor.Green);
+            Print("Select the folder in Outlook that contains the emails to import into Access\n    (you might have to click Outlook to see the prompt)\n", ConsoleColor.Green);
 
             Items emails = outlookEmailTool.GetEmails();
 
