@@ -48,9 +48,9 @@ namespace OutlookToMSAccessScript
                 MailItem mailItem = mailItems[i];
                 Print("    > " + mailItem.Subject, i % 2 == 0 ? ConsoleColor.White : ConsoleColor.Gray);
             }
-
             Print("\nThe above^ emails will be entered into Access.", ConsoleColor.Green);
             
+            //get yes / no input from user
             while(true)
             {
                 Print("Continue? (y/n)", ConsoleColor.Green);
@@ -84,7 +84,7 @@ namespace OutlookToMSAccessScript
 
                 Print($"    [firstName: {firstName}]   [lastName: {lastName}]   [email: {email}]   [companyName: {companyName}]   [phoneNumber: {phoneNumber}]   [address: {address}]   [city: {city}]   [state: {state}]   [zip: {zip}]");
 
-
+                //if the company doesnt exist, add it
                 bool companyExists = accessDatabaseTool.RowExists("CompanyName", "CompanyName", $"'{companyName}'");
                 Console.WriteLine("Company Exists: " + companyExists);
                 if (!companyExists)
@@ -93,6 +93,7 @@ namespace OutlookToMSAccessScript
                     accessDatabaseTool.AddRow("CompanyName", "CompanyName", companyName);
                 }
 
+                //a list of properties to be added into the record (format: column, value)
                 KeyValuePair<string, string>[] companyProperties = new KeyValuePair<string, string>[]
                 {
                     new KeyValuePair<string, string>("COAddress", address),
@@ -101,10 +102,12 @@ namespace OutlookToMSAccessScript
                     new KeyValuePair<string, string>("COZip", zip),
                 };
 
+                //update the company record
                 accessDatabaseTool.UpdateRow("CompanyName", "CompanyName", $"'{companyName}'", companyProperties);
+                //grab the company id (may have multiple, just take the first one)
+                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", $"'{companyName}'").Rows[0][0].ToString();
 
-                string companyId = accessDatabaseTool.GetRows("CompanyName", "CompanyName", $"'{companyName}'").Rows[0][0].ToString(); //grab the company id (may have multiple, just take the first one)
-
+                //if the contact doesnt exist, add it
                 bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompanyID", $"CInt({companyId})");
                 if (!contactExists)
                 {
@@ -112,6 +115,7 @@ namespace OutlookToMSAccessScript
                     accessDatabaseTool.AddRow("Contact information", "COCompanyID", companyId);
                 }
 
+                //a list of properties to be added into the record (format: column, value)
                 KeyValuePair<string, string>[] contactProperties = new KeyValuePair<string, string>[]
                 {
                     new KeyValuePair<string, string>("ContactFName", firstName),
@@ -120,13 +124,16 @@ namespace OutlookToMSAccessScript
                     new KeyValuePair<string, string>("ContractPhone", phoneNumber), //they spelled Contact wrong in the database lol
                 };
 
+                //update the contact record
                 accessDatabaseTool.UpdateRow("Contact information", "COCompanyID", $"CInt({companyId})", contactProperties);
+                //grab the contact id (may have multiple, just take the first one)
+                string contactID = accessDatabaseTool.GetRows("Contact information", "COCompanyID", $"CInt({companyId})").Rows[0][0].ToString();
 
-                string contactID = accessDatabaseTool.GetRows("Contact information", "COCompanyID", $"CInt({companyId})").Rows[0][0].ToString();//grab the contact id (may have multiple, just take the first one)
-
+                //TESTING until we can parse the bid number in the email
                 Print("TEST: enter the bid number of " + mailItem.Subject);
                 string bidNumber = Console.ReadLine();
 
+                //a list of properties to be added into the record (format: column, value)
                 KeyValuePair<string, string>[] bidProperties = new KeyValuePair<string, string>[]
                 {
                     new KeyValuePair<string, string>("BidIDNo", bidNumber),
@@ -134,6 +141,7 @@ namespace OutlookToMSAccessScript
                     new KeyValuePair<string, string>("ContactID", contactID)
                 };
 
+                //if the bid recipient doesnt exist, add it
                 bool bidRecipientExists = accessDatabaseTool.RowExists("tbl-BidRecipients", bidProperties);
                 if(!bidRecipientExists)
                 {
