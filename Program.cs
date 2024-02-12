@@ -1,4 +1,5 @@
 ﻿using Microsoft.Office.Interop.Outlook;
+using System.Data;
 using System.Drawing;
 using System.Runtime.Versioning;
 using System.Xml.Linq;
@@ -88,7 +89,7 @@ namespace OutlookToMSAccessScript
                 Console.WriteLine("Company Exists: " + companyExists);
                 if (!companyExists)
                 {
-                    Console.WriteLine("new company- Added company to table");
+                    Console.WriteLine("new company- Added company to 'CompanyName' table");
                     accessDatabaseTool.AddRow("CompanyName", "CompanyName", companyName);
                 }
 
@@ -107,7 +108,7 @@ namespace OutlookToMSAccessScript
                 bool contactExists = accessDatabaseTool.RowExists("Contact information", "COCompanyID", $"CInt({companyId})");
                 if (!contactExists)
                 {
-                    Console.WriteLine("new contact- Added contact to table");
+                    Console.WriteLine("new contact- Added contact to 'Contact information' table");
                     accessDatabaseTool.AddRow("Contact information", "COCompanyID", companyId);
                 }
 
@@ -120,6 +121,26 @@ namespace OutlookToMSAccessScript
                 };
 
                 accessDatabaseTool.UpdateRow("Contact information", "COCompanyID", $"CInt({companyId})", contactProperties);
+
+                string contactID = accessDatabaseTool.GetRows("Contact information", "COCompanyID", $"CInt({companyId})").Rows[0][0].ToString();//grab the contact id (may have multiple, just take the first one)
+
+                Print("TEST: enter the bid number of " + mailItem.Subject);
+                string bidNumber = Console.ReadLine();
+
+                KeyValuePair<string, string>[] bidProperties = new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("BidIDNo", bidNumber),
+                    new KeyValuePair<string, string>("CompanyID", companyId),
+                    new KeyValuePair<string, string>("ContactID", contactID)
+                };
+
+                bool bidRecipientExists = accessDatabaseTool.RowExists("tbl-BidRecipients", bidProperties);
+                if(!bidRecipientExists)
+                {
+                    Print("new bid recipient- added to 'tbl-BidRecipients' table");
+                    accessDatabaseTool.AddRow("tbl-BidRecipients", bidProperties);
+                }
+
             }
 
             Print("");

@@ -32,21 +32,41 @@ namespace OutlookToMSAccessScript
             if(output == null) { return false; }
             return output.Rows.Count != 0;
         }
+        public bool RowExists(string tableName, KeyValuePair<string, string>[] conditions)
+        {
+            DataTable output = GetRows(tableName, conditions);
+            if (output == null) { return false; }
+            return output.Rows.Count != 0;
+        }
 
-
-        public DataTable GetRows(string tableName, string columnName, string value)
+        /// <summary>
+        /// Gets rows where: at the column of conditions.key == conditions.value
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="conditions">array of column,value that must be true in the SQL query</param>
+        /// <returns></returns>
+        public DataTable GetRows(string tableName, KeyValuePair<string, string>[] conditions)
         {
             var myDataTable = new DataTable();
             using (var conection = new OleDbConnection("Provider = Microsoft.JET.OLEDB.4.0;  Data Source = " + mdbFileNameWithPath))
             {
                 conection.Open();
-                var query = $"Select * From [{tableName}] Where {columnName} = {value}";
+                var query = $"Select * From [{tableName}] Where";
+                for (int i = 0; i < conditions.Length; i++)
+                {
+                    KeyValuePair<string, string> condition = conditions[i];
+                    query += $" {condition.Key} = {condition.Value} ";
+                    if(i < conditions.Length - 1)
+                    { query += " AND "; }
+                }
                 var adapter = new OleDbDataAdapter(query, conection);
                 try { adapter.Fill(myDataTable); }
                 catch (Exception ex) { return null; }
                 return myDataTable;
             }
         }
+        public DataTable GetRows(string tableName, string columnName, string value)
+        { return GetRows(tableName, [new KeyValuePair<string, string>(columnName, value)]); }
 
         /// <summary>
         /// Adds a row into a table and sets one column to a initial value
@@ -55,11 +75,28 @@ namespace OutlookToMSAccessScript
         /// <param name="initialColumn">Column to insert the initialColumnValue</param>
         /// <param name="initialColumnValue">The initial value to insert</param>
         public void AddRow(string tableName, string initialColumn, string initialColumnValue)
+        { AddRow(tableName, [new KeyValuePair<string, string>(initialColumn, initialColumnValue)]); }
+
+        public void AddRow(string tableName, KeyValuePair<string, string>[] properties)
         {
             var con = new OleDbConnection("Provider = Microsoft.Jet.OLEDB.4.0; Data Source = " + mdbFileNameWithPath);
             var cmd = new OleDbCommand();
             cmd.Connection = con;
-            cmd.CommandText = $"insert into [{tableName}] ([{initialColumn}])  values ('{initialColumnValue}');";
+
+            string columns = "";
+            string values = "";
+            for (int i = 0; i < properties.Length; i++)
+            {
+                KeyValuePair<string, string> property = properties[i];
+                columns += $" [{property.Key}] ";
+                values += $" '{property.Value}' ";
+                if(i != properties.Length - 1)
+                {
+                    columns += ",";
+                    values += ",";
+                }
+            }
+            cmd.CommandText = $"insert into [{tableName}] ({columns})  values ({values});";
             con.Open();
             cmd.ExecuteNonQuery();
             con.Close();
