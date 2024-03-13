@@ -127,8 +127,21 @@ namespace OutlookToMSAccessScript
                 string contactID = accessDatabaseTool.GetRows("Contact information", "COCompanyID", $"CInt({companyId})").Rows[0][0].ToString();
 
                 //TESTING until we can parse the bid number in the email
-                Print("TEST: enter the bid number of " + mailItem.Subject);
-                string bidNumber = Console.ReadLine();
+                // Print("TEST: enter the bid number of " + mailItem.Subject);
+                // string bidNumber = Console.ReadLine();
+
+                //Parse the Bid ID from the subject line
+                string bidNumber = "NO BID ID FOUND IN EMAIL SUBJECT";
+                string bidIDText = "Bid ID:"; //the text to parse for in the email subject
+                int startIndex = mailItem.Subject.IndexOf(bidIDText);
+                if (startIndex < 0)
+                {
+                    Print(bidNumber, ConsoleColor.Red);
+                    continue;
+                }
+                startIndex += bidIDText.Length;
+                bidNumber = mailItem.Subject.Substring(startIndex);
+                bidNumber = bidNumber.Trim(' ');
 
                 //a list of properties to be added into the record (format: column, value)
                 KeyValuePair<string, string>[] bidProperties = new KeyValuePair<string, string>[]
