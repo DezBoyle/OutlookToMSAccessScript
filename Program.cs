@@ -28,9 +28,10 @@ namespace OutlookToMSAccessScript
 
             File.WriteAllText("information.txt", "Created by Dez Boyle\nSource Code: https://github.com/DezBoyle/OutlookToMSAccessScript");
 
-            Print("Database path: " + databasePath);
+            Print("Database path: " + databasePath, ConsoleColor.Yellow);
             Print("If this path is incorrect, close the program and exit the databasePath.txt file");
-            Print("Select the folder in Outlook that contains the emails to import into Access\n    (you might have to click Outlook to see the prompt)\n", ConsoleColor.Green);
+            Print("    The database is titled: 'RFPQ Recepient List_be.mdb' and is currently located at 'N://BEDatabase'");
+            Print("\nSelect the folder in Outlook that contains the emails to import into Access\n    (you might have to click Outlook to see the prompt)\n", ConsoleColor.Green);
 
             //List emails
             OutlookEmailTool outlookEmailTool = new OutlookEmailTool();
