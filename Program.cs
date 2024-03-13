@@ -132,9 +132,9 @@ namespace OutlookToMSAccessScript
                 // string bidNumber = Console.ReadLine();
 
                 //Parse the Bid ID from the subject line
-                string bidNumber = "NO BID ID FOUND IN EMAIL SUBJECT";
-                string bidIDText = "Bid ID:"; //the text to parse for in the email subject
-                int startIndex = mailItem.Subject.IndexOf(bidIDText);
+                string bidNumber = mailItem.Subject.ToLower();
+                string bidIDText = "Bid ID:".ToLower(); //the text to parse for in the email subject
+                int startIndex = bidNumber.IndexOf(bidIDText);
                 if (startIndex < 0)
                 {
                     Print(bidNumber, ConsoleColor.Red);
