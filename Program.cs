@@ -2,6 +2,7 @@
 using System.Data;
 using System.Drawing;
 using System.Runtime.Versioning;
+using System.Text;
 using System.Xml.Linq;
 
 namespace OutlookToMSAccessScript
@@ -69,16 +70,19 @@ namespace OutlookToMSAccessScript
             AccessDatabaseTool accessDatabaseTool = new AccessDatabaseTool(databasePath);
             foreach (MailItem mailItem in mailItems)
             {
-                string fullName = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Name: ", "Email: "));
+                string body = mailItem.Body;
+                string fullName = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "Name: ", "Email: "));
                 string firstName = fullName.Split(' ')[0];
                 string lastName = fullName.Split(firstName)[1].Replace(" ", string.Empty);
-                string email = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Email: ", "<"));
-                string companyName = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Company: ", "U.S. phone number: "));
+                string email = "ERROR";
+                try { email = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "Email: ", "<")); } //some emails look like this: tmoon@eraconsultants.com <mailto:tmoon@eraconsultants.com>
+                catch { email = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "Email: ", "Company:")); }//but others dont have the mailTo link and look like this: tmoon@eraconsultants.com\r
+                string companyName = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "Company: ", "U.S. phone number: "));
                 string phoneNumber = GetNumbersFromString(RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "U.S. phone number: ", "Address: ")));
-                string address = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "Address: ", "City: "));
-                string city = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "City: ", "State: "));
-                string state = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "State: ", "U.S. ZIP code: "));
-                string zip = RemoveTrailingSpacesAndNewLines(GetTextBetween(mailItem.Body, "U.S. ZIP code: ", "reCAPTCHA:"));
+                string address = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "Address: ", "City: "));
+                string city = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "City: ", "State: "));
+                string state = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "State: ", "U.S. ZIP code: "));
+                string zip = RemoveTrailingSpacesAndNewLines(GetTextBetween(body, "U.S. ZIP code: ", "reCAPTCHA:"));
 
                 Print($"    [firstName: {firstName}]   [lastName: {lastName}]   [email: {email}]   [companyName: {companyName}]   [phoneNumber: {phoneNumber}]   [address: {address}]   [city: {city}]   [state: {state}]   [zip: {zip}]");
 
@@ -137,7 +141,7 @@ namespace OutlookToMSAccessScript
                 int startIndex = bidNumber.IndexOf(bidIDText);
                 if (startIndex < 0)
                 {
-                    Print(bidNumber, ConsoleColor.Red);
+                    Print("Could not parse bid number from email subject: " + bidNumber, ConsoleColor.Red);
                     continue;
                 }
                 startIndex += bidIDText.Length;
