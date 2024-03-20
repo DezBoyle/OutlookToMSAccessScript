@@ -1,0 +1,2 @@
+Created by Dez Boyle
+Source Code: https://github.com/DezBoyle/OutlookToMSAccessScript
